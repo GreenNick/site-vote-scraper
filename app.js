@@ -2,7 +2,7 @@ const fetch = require('node-fetch')
 const cheerio = require('cheerio')
 const fs = require('fs')
 
-fs.unlink('./output.txt', err => {
+fs.writeFile('./output.txt', '', err => {
   if (err) throw err
 })
 
@@ -51,7 +51,6 @@ fetch('https://challenges.robotevents.com/challenge/95/entry')
                 const $ = cheerio.load(html)
                 const entry = ($('.panel-heading > h3').text().trim())
                 const score = ($('.score-box').text().trim())
-                console.log(`${entry}: ${score}`)
 
                 fs.appendFile('./output.txt', `${score} votes | ${entry}\n`, err => {
                   if (err) throw err
