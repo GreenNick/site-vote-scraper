@@ -1,62 +1,72 @@
 const fetch = require('node-fetch')
 const cheerio = require('cheerio')
-const fs = require('fs')
+const URL = 'https://challenges.robotevents.com/challenge/95/entry'
 
-fs.writeFile('./output.txt', '', err => {
-  if (err) throw err
-})
-
-fetch('https://challenges.robotevents.com/challenge/95/entry')
-  .then(res => {
-    if (res.ok) {
-      return res.text()
-    }
-  })
+fetch(URL)
+  .then(res => res.text())
   .then(html => {
     const $ = cheerio.load(html)
     const pages = $('.pagination > li > a')
-    const pageLinks = []
+    const links = []
 
     pages.each((i, tag) => {
-      pageLinks[i] = tag.attribs.href
+      links.push(tag.attribs.href)
     })
 
-    pageLinks.pop()
-    pageLinks.unshift('https://challenges.robotevents.com/challenge/95/entry')
-    
-    pageLinks.forEach(page => {
-      fetch(page)
-        .then(res => {
-          if (res.ok) {
-            return res.text()
-          }
-        })
-        .then(html => {
-          const $ = cheerio.load(html)
-          const entries = $('h4 a')
-          const links = []
-
-          entries.each((i, tag) => {
-            links[i] = tag.attribs.href
-          })
-
-          links.forEach(link => {
-            fetch(link)
-              .then(res => {
-                if (res.ok) {
-                  return res.text()
-                }
-              })
-              .then(html => {
-                const $ = cheerio.load(html)
-                const entry = ($('.panel-heading > h3').text().trim())
-                const score = ($('.score-box').text().trim())
-
-                fs.appendFile('./output.txt', `${score} votes | ${entry}\n`, err => {
-                  if (err) throw err
-                })
-              })
-          })
-        })
-    })
+    links.pop()
+    links.unshift(URL)
+    return links
   })
+  .then(res =>
+    Promise.all(res.map(url =>
+      fetch(url))
+    )
+  )
+  .then(res =>
+    Promise.all(res.map(url =>
+      url.text())
+    )
+  )
+  .then(html =>
+    html
+      .map(page => {
+        const $ = cheerio.load(page)
+        const entries = $('h4 a')
+        const links = []
+
+        entries.each((i, tag) => {
+          links.push(tag.attribs.href)
+        })
+
+        return links
+      })
+  )
+  .then(res =>
+    res.join().split(',')
+  )
+  .then(res =>
+    Promise.all(res.map(url =>
+      fetch(url))
+    )
+  )
+  .then(res =>
+    Promise.all(res.map(url =>
+      url.text())
+    )
+  )
+  .then(html =>
+    html
+      .map(page => {
+        const $ = cheerio.load(page)
+        const name = $('.panel-heading > h3').text().trim()
+        const score = $('.score-box').text().trim()
+
+        return { score, name }
+      })
+      .sort((a, b) => b.score - a.score)
+  )
+  .then(res =>
+    res.forEach(entry =>
+      console.log(`${entry.score} | ${entry.name}`)
+    )
+  )
