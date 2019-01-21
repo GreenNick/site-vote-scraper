@@ -2,6 +2,7 @@ const fetch = require('node-fetch')
 const cheerio = require('cheerio')
 const URL = 'https://challenges.robotevents.com/challenge/95/entry'
 
+console.log('This script was created by Nicholas Bowers from team 1320D. Vote for our entry for the Dell Website challenge here:\nhttps://challenges.robotevents.com/challenge/95/entry/6629\n')
 fetch(URL)
   .then(res => res.text())
   .then(html => {
